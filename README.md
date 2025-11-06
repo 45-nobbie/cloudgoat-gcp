@@ -33,7 +33,7 @@ Future updates will include:
 | Phase | Focus | Status |
 |-------|--------|--------|
 | **1. Repo Skeleton & Docs** | Create structure, base docs, workflow | ✅ Done |
-| **2. Challenge Development** | Add 6 high-quality GCP-native challenges | 🟨 Pending |
+| **2. Challenge Development** | Add 6 high-quality GCP-native challenges | 1 Done  |
 | **3. UI Development** | React portal for challenge management & leaderboard | ⏳ Pending |
 | **4. GCP Deployment** | Terraform + GKE automation | ⏳ Pending |
 | **5. Domain Integration** | Custom DNS (A record) + HTTPS setup | ⏳ Pending |

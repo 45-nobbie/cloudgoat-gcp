@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metadata-exfil
+  labels:
+    app: metadata-exfil
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metadata-exfil
+  template:
+    metadata:
+      labels:
+        app: metadata-exfil
+    spec:
+      serviceAccountName: metadata-exfil-sa
+      containers:
+        - name: app
+          image: gcr.io/<YOUR_PROJECT>/metadata-exfil:latest
+          ports:
+            - containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metadata-exfil
+spec:
+  type: ClusterIP
+  selector:
+    app: metadata-exfil
+  ports:
+    - port: 80
+      targetPort: 8080
