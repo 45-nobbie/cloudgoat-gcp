@@ -1,0 +1,8 @@
+{
+  "metadata-exfil": "FLAG{metadata-exfil-demo}",
+  "gcs-key": "FLAG{gcs-key-demo}",
+  "ssrf": "FLAG{ssrf-demo}",
+  "iam-misconfig": "FLAG{iam-misconfig-demo}",
+  "workload-identity": "FLAG{workload-identity-demo}",
+  "ci-supply-chain": "FLAG{ci-supply-chain-demo}"
+}

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>CloudGoat-GCP — Lab Portal</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <h1>CloudGoat-GCP — Lab Portal</h1>
+  <p class="sub">Simple portal: select a challenge, view hints, submit flags.</p>
+</header>
+
+<main>
+  <section id="challenges">
+    <h2>Challenges</h2>
+    <div id="challenge-list">Loading…</div>
+  </section>
+
+  <section id="submission">
+    <h2>Submit Flag</h2>
+    <form id="flag-form" onsubmit="return false;">
+      <label for="challenge">Challenge</label>
+      <select id="challenge" required></select>
+
+      <label for="flag">Flag</label>
+      <input id="flag" type="text" placeholder="FLAG{...}" required />
+
+      <button id="submit-btn">Submit Flag</button>
+    </form>
+
+    <div id="result" aria-live="polite"></div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
