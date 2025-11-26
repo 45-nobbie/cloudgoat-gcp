@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  mock-metadata:
+    build:
+      context: ./mock-metadata
+      dockerfile: Dockerfile
+    container_name: cg_metadata_exfil_mock
+    environment:
+      - MOCK_TOKEN=fake-token-12345
+    ports:
+      - "5000:5000"
+
+  metadata-exfil:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cg_metadata_exfil
+    environment:
+      - METADATA_URL=http://mock-metadata:5000/computeMetadata/v1/instance/service-accounts/default/token
+      - CHALLENGE_FLAG=FLAG{metadata-exfil-local}
+    ports:
+      - "8081:8080"
+    depends_on:
+      - mock-metadata
+
+# network defaults OK

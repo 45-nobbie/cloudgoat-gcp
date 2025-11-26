@@ -2,8 +2,9 @@ from flask import Flask, jsonify, request
 import os
 import json
 import time
-from flask_cors import CORS
-
+from flask_cors import CORS, cross_origin
+import subprocess
+from flask import make_response
 
 app = Flask(__name__)
 
@@ -39,6 +40,79 @@ def add_solve(user, challenge, when=None):
     lb.append({"user": user or "anon", "challenge": challenge, "time": when})
     with open(LEADERBOARD_FILE, 'w') as f:
         json.dump(lb, f, indent=2)
+
+def repo_root():
+    # backend file path: <repo>/portal/backend/app.py
+    # repo_root should be two levels up from this file
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+def run_compose_for_challenge(challenge_id, action="up"):
+    """
+    Runs docker-compose -f <repo_root>/challenges/<challenge_id>/local/docker-compose.yml up -d
+    Returns (ok: bool, output: str)
+    """
+    compose_file = os.path.join(repo_root(), "challenges", challenge_id, "local", "docker-compose.yml")
+    if not os.path.exists(compose_file):
+        return False, f"compose file not found at {compose_file}"
+    try:
+        if action == "up":
+            cmd = ["docker-compose", "-f", compose_file, "up", "-d", "--build"]
+        elif action == "stop":
+            cmd = ["docker-compose", "-f", compose_file, "stop"]
+        elif action == "down":
+            cmd = ["docker-compose", "-f", compose_file, "down"]
+        else:
+            return False, f"unknown action {action}"
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        return True, proc.stdout + proc.stderr
+    except subprocess.CalledProcessError as e:
+        # return stdout/stderr or the exception string
+        return False, (e.stdout or "") + (e.stderr or "") or str(e)
+    
+
+
+
+
+@app.route('/api/challenges/<cid>/deploy', methods=['OPTIONS'])
+def deploy_options(cid):
+    # Echo Origin or default to localhost dev origin
+    origin = request.headers.get("Origin", "http://127.0.0.1:5500")
+    resp = make_response("", 204)
+    resp.headers['Access-Control-Allow-Origin'] = origin
+    resp.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+    resp.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With, Accept'
+    resp.headers['Access-Control-Allow-Credentials'] = 'true'
+    return resp
+
+
+
+
+
+@app.route('/api/challenges/<cid>/deploy', methods=['POST', 'OPTIONS'])
+@cross_origin(origins="http://localhost:8000",
+              methods=['POST', 'OPTIONS'],
+              allow_headers=['Content-Type','Authorization','X-Requested-With'],
+              supports_credentials=True)
+def deploy_challenge(cid):
+    data = request.get_json() or {}
+    action = data.get("action", "start")
+
+    # Use your existing run_compose_for_challenge or run_compose_async function
+    if action == "start":
+        ok, out = run_compose_for_challenge(cid, action="up")
+        if ok:
+            return jsonify({"success": True, "message": f"{cid} deployed locally", "output": out}), 200
+        else:
+            return jsonify({"success": False, "message": f"deploy failed: {out}"}), 500
+
+    if action == "stop":
+        ok, out = run_compose_for_challenge(cid, action="stop")
+        if ok:
+            return jsonify({"success": True, "message": f"{cid} stopped locally", "output": out}), 200
+        else:
+            return jsonify({"success": False, "message": f"stop failed: {out}"}), 500
+
+    return jsonify({"success": False, "message": "invalid action"}), 400
 
 @app.route('/api/challenges', methods=['GET'])
 def list_challenges():
@@ -78,8 +152,37 @@ def leaderboard():
         lb = json.load(f)
     return jsonify(lb)
 
+
+# @app.route('/api/challenges/<cid>/deploy', methods=['POST'])
+# def deploy_challenge(cid):
+    # data = request.get_json() or {}
+    # action = data.get("action")
+
+    # # LOCAL MODE — use docker compose
+    # if action == "start":
+    #     try:
+    #         subprocess.run(["docker", "compose", "up", "-d", cid], check=True)
+    #         return jsonify({"ok": True, "message": f"{cid} deployed (local docker)"}), 200
+    #     except subprocess.CalledProcessError:
+    #         return jsonify({"ok": False, "message": "docker compose failed"}), 500
+
+    # if action == "stop":
+    #     try:
+    #         subprocess.run(["docker", "compose", "stop", cid], check=True)
+    #         return jsonify({"ok": True, "message": f"{cid} stopped"}), 200
+    #     except subprocess.CalledProcessError:
+    #         return jsonify({"ok": False, "message": "docker compose failed"}), 500
+
+    # return jsonify({"ok": False, "message": "invalid action"}), 400
+
+
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT',4000)), debug=True)
 
 
-CORS(app)
+CORS(app,
+     resources={r"/api/*": {"origins": ["http://localhost:8000", "http://127.0.0.1:5500"]}},
+     supports_credentials=True,
+     allow_headers=["Content-Type", "Authorization", "X-Requested-With"])

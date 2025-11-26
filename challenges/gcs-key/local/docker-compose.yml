@@ -1,0 +1,22 @@
+version: "3.8"
+services:
+  mock-gcs:
+    build:
+      context: ./mock-gcs
+      dockerfile: Dockerfile
+    container_name: cg_gcs_mock
+    ports:
+      - "5000:5000"
+
+  gcs-key:
+    build:
+      context: ../app     # <-- build the app image from challenges/gcs-key/app
+      dockerfile: Dockerfile
+    container_name: cg_gcs_key
+    environment:
+      - CHALLENGE_FLAG=FLAG{gcs-key-local}
+      - EXPECTED_TOKEN=gcs-token-abc123
+    ports:
+      - "8181:8080"
+    depends_on:
+      - mock-gcs

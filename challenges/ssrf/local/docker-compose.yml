@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  mock-metadata:
+    build:
+      context: ./mock-metadata
+      dockerfile: Dockerfile
+    container_name: cg_ssrf_metadata_mock
+    ports:
+      - "5002:5002"
+
+  ssrf-app:
+    build:
+      context: ../app
+      dockerfile: Dockerfile
+    container_name: cg_ssrf_app
+    environment:
+      - CHALLENGE_FLAG=FLAG{ssrf-local}
+    ports:
+      - "8182:8080"
+    depends_on:
+      - mock-metadata

@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+  portal-backend:
+    build: ./portal/backend
+    container_name: cg_portal_backend
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./portal/backend:/app
+    environment:
+      - FLASK_ENV=development
+    depends_on:
+      - metadata-exfil
+
+  # Challenge 1 container
+  metadata-exfil:
+    build: ./challenges/metadata-exfil/local-test
+    container_name: cg_metadata_exfil
+    ports:
+      - "8081:8080"
+    environment:
+      - METADATA_URL=http://mock-metadata:5000/computeMetadata/v1/instance/service-accounts/default/token
+      - CHALLENGE_FLAG=FLAG{metadata-exfil-local}
+    depends_on:
+      - mock-metadata
+
+  mock-metadata:
+    build:
+      context: ./challenges/metadata-exfil/local-test/mock-metadata
+    container_name: cg_mock_metadata
+    environment:
+      - MOCK_TOKEN=fake-token-12345
+    ports:
+      - "5000:5000"
+
+networks:
+  default:
+    driver: bridge
